@@ -2,10 +2,10 @@ package main
 
 import (
 	"runtime"
-	"crontab/master"
 	"fmt"
 	"flag"
 	"time"
+	"crontab/master"
 )
 
 var (
@@ -20,8 +20,8 @@ func initArgs() {
 	flag.Parse()
 }
 
-func initEnv()  {
-	//cpu 最大化
+// 初始化线程数量
+func initEnv() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
@@ -30,33 +30,44 @@ func main() {
 		err error
 	)
 
-	//初始化命令行参数
+	// 初始化命令行参数
 	initArgs()
 
-	//初始化线程
+	// 初始化线程
 	initEnv()
 
-	//加载配置
-	if err=master.InitConfig(confFile);err!=nil{
+	// 加载配置
+	if err = master.InitConfig(confFile); err != nil {
 		goto ERR
 	}
 
-	//任务管理器配置
-	if err =master.InitJobMgr();err!=nil{
+	// 初始化服务发现模块
+	if err = master.InitWorkerMgr(); err != nil {
 		goto ERR
 	}
 
-	//启动Api HTTP服务
-	if err=master.InitApiServer();err!=nil{
+	// 日志管理器
+	if err =master.InitLogMgr(); err != nil {
 		goto ERR
 	}
 
-	//正常退出
-	for{
-		time.Sleep(1*time.Second)
+	//  任务管理器
+	if err = master.InitJobMgr(); err != nil {
+		goto ERR
 	}
+
+	// 启动Api HTTP服务
+	if err = master.InitApiServer(); err != nil {
+		goto ERR
+	}
+
+	// 正常退出
+	for {
+		time.Sleep(1 * time.Second)
+	}
+
 	return
-	ERR:
-		fmt.Println(err)
 
+ERR:
+	fmt.Println(err)
 }
